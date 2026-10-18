@@ -1,11 +1,30 @@
 {
-  "description": "A game",
+  "description": "Rival trading houses, built together",
   "icon": {
-    "emoji": "⚔️"
+    "emoji": "🏰"
   },
   "secrets": [],
   "governance": {
     "preset": "you_or_the_group"
   },
-  "tests": []
+  "tests": [
+    {
+      "id": "demo",
+      "visual": true,
+      "name": "Populated house",
+      "path": "/?demo=1",
+      "expectSelector": "[data-house-ledger] li",
+      "impact": ["public/**", "server.js", "styles/**"]
+    },
+    {
+      "name": "New house",
+      "path": "/",
+      "expectText": "House of"
+    },
+    {
+      "name": "Challenge button",
+      "path": "/?demo=1",
+      "expectSelector": "button.btn-primary[data-action=challenge]"
+    }
+  ]
 }

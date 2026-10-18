@@ -95,24 +95,31 @@ tables you've marked private), etc.
 
 ## About ChaosRoom
 
-A game
-
-_(add a sentence or two more of product context here so Claude Code has a
-shared understanding of what this app is for)_
+A game of rival trading houses, built with the group. The player runs one
+house: workers pay gold tribute every 30-minute turn, recruiting hires more
+workers, tools make the house stronger, and a market-day challenge against
+one of the game's eight rival houses moves 10% of their gold when the
+player's strength is greater. Everything is written into the house ledger,
+a court chronicle. (Kings of Chaos was the ask; Homeroom's content rules
+forbid combat and weapons, so the war became a trading rivalry — workers,
+tools, market days. Keep that swap for anything later.)
 
 ## Design
 
-This app's look. The first real version fills in the blanks; every later
-change follows it, and updates it when a request changes the look on purpose.
+This app's look: a merchant's ledger on parchment. Every later change
+follows it, and updates it when a request changes the look on purpose.
 
-- **Palette:** _(name the accent, any second colour and the neutrals, e.g.
-  "accent: tomato red; second: basil green; neutrals: warm greys")_
-- **Signature element:** _(the one thing on screen drawn from this app's
-  subject, which no other app would have)_
-- **Type scale:** `text-title`, `text-heading`, `text-body`, `text-small`
-  _(change their sizes in `tailwind.config.js` if you must, not their number)_
-- **One fixed look:** _(only for an app drawn as its own scene, such as a
-  game: which look, and why. Otherwise delete this line.)_
+- **Palette:** parchment neutrals (warm in light, the same hues on charcoal
+  in dark), sealing-wax red as the one accent (Challenge, wins, chosen rows),
+  and a treasury `gold` token for money figures and purchase edges.
+- **Signature element:** the house ledger — each entry edged red for a
+  challenge, gold for a purchase, plain for hiring and tribute, with the
+  turn and part of day in italics above the chronicle line.
+- **Type scale:** `text-title`, `text-heading`, `text-body`, `text-small`.
+  A serif face (`font-serif`, ui-serif) for house names and chronicle text;
+  the system sans (`font-sans`) for numbers and labels — screens.css `.sans`
+  carries that pairing.
+- **One fixed look:** none. Both looks follow the viewer's Homeroom theme.
 
 The kit is in `styles/tailwind-input.css`: colour tokens with a light and
 a dark value (named in `tailwind.config.js`), and a few components

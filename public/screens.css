@@ -1,0 +1,127 @@
+/* The screens the spec drew, carried over by the platform before the first
+   version was built (screen 1 is public/index.html's main screen; screen 2,
+   if any, its <template data-spec-screen="2">). Colours are the design kit's
+   tokens, rgb(var(--accent)), so they follow the light and the dark look. */
+
+/* Each screen is one centred column: the phone width it was drawn at grows
+   to a readable column on a wider window, never rows and buttons stretched
+   across the window. Remove this only for an app that fills the window by
+   design, such as a map. */
+[data-spec-screen] {
+  width: 100%;
+  max-width: 42rem;
+  margin-inline: auto;
+}
+
+.app {
+  background: rgb(var(--ground));
+  color: rgb(var(--fg));
+  min-height: 1400px;
+  width: 390px;
+  font-family: ui-serif,Georgia,"Times New Roman",serif;
+  font-size: 16px;
+  line-height: 24px;
+  box-sizing: border-box;
+  padding: 20px 16px 32px;
+}
+
+.app * {box-sizing:border-box;margin:0}
+
+.sans {font-family:system-ui,-apple-system,sans-serif}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.name {font-size:20px;line-height:28px;font-weight:600}
+
+.turn {font-size:14px;line-height:20px;color:rgb(var(--muted))}
+
+.card {background:rgb(var(--surface));border:1px solid rgb(var(--line));border-radius:12px;padding:16px}
+
+.cmd {font-size:28px;line-height:36px;font-weight:700;margin-bottom:4px}
+
+/* A long house name drops to 24px so it keeps to one line (set from
+   renderCard when the name runs past ~18 characters). */
+.cmd-sm {font-size:24px;line-height:32px}
+
+.rank {font-size:14px;line-height:20px;color:rgb(var(--muted))}
+
+.stats {display:grid;grid-template-columns:1.3fr 1fr 1fr;margin-top:14px;border-top:1px solid rgb(var(--line));padding-top:12px}
+
+.stat+.stat {border-left:1px solid rgb(var(--line));padding-left:12px}
+
+.num {font-size:20px;line-height:28px;font-weight:700}
+
+.gold {color:rgb(var(--gold))}
+
+.lbl {font-size:14px;line-height:20px;color:rgb(var(--muted))}
+
+.tiles {display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 24px}
+
+/* text-align:left: these are <button>s, which browsers centre by default;
+   the spec draws icon, title and subtitle on one left edge. */
+.tile {border:1px solid rgb(var(--line));background:rgb(var(--surface));border-radius:12px;padding:12px;min-height:92px;display:flex;flex-direction:column;gap:2px;color:rgb(var(--fg));text-align:left}
+
+.tile svg,.crest svg {width:24px;height:24px;stroke:rgb(var(--fg));fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+.tile svg {margin-bottom:4px}
+
+.tile b {font-weight:600}
+
+.tile span {font-size:14px;line-height:20px;color:rgb(var(--muted))}
+
+.btn-primary {grid-column:1/3;flex-direction:row;align-items:center;justify-content:space-between;background:rgb(var(--accent));color:rgb(var(--on-accent));border-color:rgb(var(--accent));min-height:72px;padding:12px 16px}
+
+.btn-primary svg {stroke:rgb(var(--on-accent));margin:0;width:28px;height:28px}
+
+.btn-primary span {color:rgb(var(--on-accent))}
+
+.btn-primary b {font-size:20px;line-height:28px;color:rgb(var(--on-accent))}
+
+.section-label {font-size:14px;line-height:20px;font-weight:500;color:rgb(var(--muted));padding:0 4px;margin-bottom:8px;display:flex;justify-content:space-between}
+
+.list {background:rgb(var(--surface));border:1px solid rgb(var(--line));border-radius:12px;overflow:hidden;margin-bottom:24px}
+
+.list-row {display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 16px;border-bottom:1px solid rgb(var(--line))}
+
+.list-row:last-child {border-bottom:0}
+
+.list-row.chosen {background:rgb(var(--raised));box-shadow:inset 4px 0 0 rgb(var(--accent))}
+
+.list-row.you {color:rgb(var(--muted))}
+
+.pos {width:24px;font-size:14px;color:rgb(var(--muted));font-weight:600}
+
+.crest {width:36px;height:36px;border-radius:18px;background:rgb(var(--raised));display:flex;align-items:center;justify-content:center}
+
+/* min-width:0 lets the name shrink inside the flex row; the name truncates
+   with an ellipsis on one line rather than wrapping or hyphen-breaking. */
+.who {flex:1;min-width:0}
+
+.who b {font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+
+.who span {font-size:14px;line-height:20px;color:rgb(var(--muted))}
+
+.tag {font-size:14px;line-height:20px;font-weight:600;color:rgb(var(--accent))}
+
+.ledger {background:rgb(var(--surface));border:1px solid rgb(var(--line));border-radius:12px;overflow:hidden}
+
+.entry {padding:12px 16px 12px 14px;border-left:4px solid rgb(var(--line));border-bottom:1px solid rgb(var(--line))}
+
+.entry:last-child {border-bottom:0}
+
+.entry.win {border-left-color:rgb(var(--accent))}
+
+.entry.buy {border-left-color:rgb(var(--gold))}
+
+.when {font-size:14px;line-height:20px;color:rgb(var(--muted));font-style:italic}
+
+.delta {font-size:14px;line-height:20px;font-weight:600}
+
+.up {color:rgb(var(--gold))}
+
+.down {color:rgb(var(--accent))}

@@ -55,6 +55,13 @@ module.exports = {
         danger: token('danger'),
         'on-danger': token('on-danger'),
         focus: token('focus'), // the keyboard focus ring
+        gold: token('gold'), // treasury gold: money figures, purchases
+      },
+      // Two faces, as the ledger uses them: a serif for names and
+      // chronicle text, the system sans for numbers and labels.
+      fontFamily: {
+        serif: ['ui-serif', 'Georgia', '"Times New Roman"', 'serif'],
+        sans: ['system-ui', '-apple-system', 'sans-serif'],
       },
       // The type scale: four sizes, and nothing in between.
       fontSize: {
