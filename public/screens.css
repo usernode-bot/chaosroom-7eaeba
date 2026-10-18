@@ -42,7 +42,11 @@
 
 .card {background:rgb(var(--surface));border:1px solid rgb(var(--line));border-radius:12px;padding:16px}
 
-.cmd {font-size:28px;line-height:36px;font-weight:700}
+.cmd {font-size:28px;line-height:36px;font-weight:700;margin-bottom:4px}
+
+/* A long house name drops to 24px so it keeps to one line (set from
+   renderCard when the name runs past ~18 characters). */
+.cmd-sm {font-size:24px;line-height:32px}
 
 .rank {font-size:14px;line-height:20px;color:rgb(var(--muted))}
 
@@ -58,7 +62,9 @@
 
 .tiles {display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 24px}
 
-.tile {border:1px solid rgb(var(--line));background:rgb(var(--surface));border-radius:12px;padding:12px;min-height:92px;display:flex;flex-direction:column;gap:2px;color:rgb(var(--fg))}
+/* text-align:left: these are <button>s, which browsers centre by default;
+   the spec draws icon, title and subtitle on one left edge. */
+.tile {border:1px solid rgb(var(--line));background:rgb(var(--surface));border-radius:12px;padding:12px;min-height:92px;display:flex;flex-direction:column;gap:2px;color:rgb(var(--fg));text-align:left}
 
 .tile svg,.crest svg {width:24px;height:24px;stroke:rgb(var(--fg));fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 
@@ -74,7 +80,7 @@
 
 .btn-primary span {color:rgb(var(--on-accent))}
 
-.btn-primary b {font-size:20px;line-height:28px}
+.btn-primary b {font-size:20px;line-height:28px;color:rgb(var(--on-accent))}
 
 .section-label {font-size:14px;line-height:20px;font-weight:500;color:rgb(var(--muted));padding:0 4px;margin-bottom:8px;display:flex;justify-content:space-between}
 
@@ -92,9 +98,11 @@
 
 .crest {width:36px;height:36px;border-radius:18px;background:rgb(var(--raised));display:flex;align-items:center;justify-content:center}
 
-.who {flex:1}
+/* min-width:0 lets the name shrink inside the flex row; the name truncates
+   with an ellipsis on one line rather than wrapping or hyphen-breaking. */
+.who {flex:1;min-width:0}
 
-.who b {font-weight:600;display:block}
+.who b {font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
 
 .who span {font-size:14px;line-height:20px;color:rgb(var(--muted))}
 

@@ -133,6 +133,13 @@
           <div class="stat"><div class="skeleton h-6 w-16"></div><div class="lbl">Tools</div></div>
         </div>
       </div>
+      <!-- The action tiles at their own height, so nothing jumps when the
+           data arrives. -->
+      <div class="tiles">
+        <div class="tile btn-primary"><div><div class="skeleton h-6 w-28"></div><div class="skeleton h-4 w-44 mt-1"></div></div><div class="skeleton h-7 w-7"></div></div>
+        <div class="tile"><div class="skeleton h-6 w-6"></div><div class="skeleton h-5 w-20 mt-1"></div><div class="skeleton h-4 w-32 mt-1"></div></div>
+        <div class="tile"><div class="skeleton h-6 w-6"></div><div class="skeleton h-5 w-16 mt-1"></div><div class="skeleton h-4 w-28 mt-1"></div></div>
+      </div>
       <div class="section-label mt-4 mb-2"><span>Rival houses</span></div>
       <div class="list">
         <div class="list-row"><div class="skeleton h-6 w-6"></div><div class="crest"><div class="skeleton h-6 w-6 rounded-full"></div></div><div class="who"><div class="skeleton h-5 w-28"></div><div class="skeleton h-4 w-40 mt-1"></div></div></div>
@@ -148,11 +155,14 @@
       </div>
     </div>
 
-    <!-- Error: only when the load failed. -->
-    <div id="error" class="state-error sans" hidden>
-      <p class="text-body">Your house could not be loaded. Nothing was lost.</p>
-      <p class="text-small text-muted">Check your connection, then try again.</p>
-      <button type="button" class="btn-secondary" id="retry">Retry</button>
+    <!-- Error: only when the load failed. The message sits in a surface
+         card, and Retry is the screen's own accent-filled button. -->
+    <div id="error" class="sans" hidden>
+      <div class="card">
+        <p class="text-body">Your house could not be loaded. Nothing was lost.</p>
+        <p class="text-small text-muted mt-1">Check your connection, then try again.</p>
+        <button type="button" class="btn-primary w-full mt-4" id="retry">Retry</button>
+      </div>
     </div>
 
     <!-- Guest: a visitor with no Homeroom account sees the rival houses and
@@ -177,7 +187,7 @@
         </div>
       </div>
       <div class="tiles sans">
-        <button type="button" class="tile btn-primary" data-action="challenge" id="btn-challenge"><div><b>Challenge</b><br><span id="challenge-sub">Choose a rival house</span></div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/></svg></button>
+        <button type="button" class="tile btn-primary" data-action="challenge" id="btn-challenge"><div><b>Challenge</b><br><span id="challenge-sub">Tap a rival below to choose it</span></div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/></svg></button>
         <button type="button" class="tile" data-action="recruit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><b>Recruit</b><span>200 gold per worker</span></button>
         <button type="button" class="tile" data-action="tools"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M12 14v6M4 12h6M14 12h6"/></svg><b>Tools</b><span id="tools-sub">&nbsp;</span></button>
       </div>
@@ -317,6 +327,8 @@
     }
 
     function renderCard() {
+      // A long house name drops to 24px so it stays on one line.
+      $('house-name').className = 'cmd' + (state.house.name.length > 18 ? ' cmd-sm' : '');
       $('house-name').textContent = state.house.name;
       $('house-rank').textContent = 'Rank ' + state.rank + ' of ' + state.houseCount + ' houses, strength ' + fmt(state.strength);
       $('stat-gold').textContent = fmt(state.house.gold);
@@ -370,7 +382,7 @@
       }
       if (!chosen) {
         btn.disabled = true;
-        sub.textContent = 'Choose a rival house';
+        sub.textContent = 'Tap a rival below to choose it';
       } else if (chosen.met) {
         btn.disabled = true;
         sub.textContent = 'Already met this turn';
