@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <script>
   // usernode-dev-console@1
   (function () {
@@ -64,7 +64,7 @@
   })();
   </script>
   <title>ChaosRoom</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%237c3aed'/><circle cx='50' cy='50' r='18' fill='white'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M32 8v84' stroke='%23991b1b' stroke-width='10' stroke-linecap='round'/><path d='M32 12h46l-13 20 13 20H32z' fill='%23991b1b'/></svg>">
   <!-- Tailwind, PRECOMPILED for this app (was cdn.tailwindcss.com's
        in-browser engine plus an inline tailwind.config here). The config
        moved to tailwind.config.js in the repo root; npm run build compiles
@@ -111,47 +111,480 @@
 <body class="min-h-screen bg-ground text-fg">
   <!-- Built from the design kit in styles/tailwind-input.css: colour tokens
        that are right in both looks, and components for buttons, fields,
-       lists, cards and data states. The real app keeps the kit; CLAUDE.md's
-       "## Design" says how. -->
-  <!-- (Named in prose on purpose: Tailwind compiles any class-name word in
-       these files, comments included, and the starter should ship only the
-       components its screen uses.) -->
-  <!-- usernode-spec-screens@1: the screens the spec drew, carried over by the platform as this
-       first version's starting point. Their styles are in public/screens.css.
-       Change them where behaviour needs it; do not redraw them. -->
+       lists, cards and data states. The look is the merchant's ledger the
+       spec draws; CLAUDE.md's "## Design" says how. -->
+  <!-- usernode-spec-screens@1: the screen the spec drew. The drawn sample
+       values are emptied below and set from the API; the drawn rows live on
+       as the templates the rows are rendered from. -->
   <div data-spec-screen="1">
     <div class="app">
-    <div class="top"><div class="name">ChaosRoom</div><div class="turn sans">Turn 87, next tribute at 14:30</div></div>
-    <div class="card">
-    <div class="cmd">House of You</div>
-    <div class="rank">Rank 4 of 9 houses, strength 1,371</div>
-    <div class="stats sans">
-    <div class="stat"><div class="num gold">48,250</div><div class="lbl">Gold</div></div>
-    <div class="stat"><div class="num">1,326</div><div class="lbl">Workers</div></div>
-    <div class="stat"><div class="num">9</div><div class="lbl">Tools</div></div>
-    </div></div>
-    <div class="tiles sans">
-    <div class="tile btn-primary"><div><b>Challenge</b><br><span>Market day against House Varek</span></div><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/></svg></div>
-    <div class="tile"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><b>Recruit</b><span>200 gold per worker</span></div>
-    <div class="tile"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M12 14v6M4 12h6M14 12h6"/></svg><b>Tools</b><span>Next: Mill Wheel</span></div>
+    <div class="top"><div class="name">ChaosRoom</div><div class="turn sans" id="turn-line">&nbsp;</div></div>
+
+    <!-- The screen's three data states. Exactly one shows: -->
+    <!-- Loading: the card, the rival rows and the ledger entries at their
+         own height, skeleton bars where their text goes. -->
+    <div id="loading" class="sans">
+      <div class="card">
+        <div class="skeleton h-7 w-44"></div>
+        <div class="skeleton h-5 w-56 mt-1"></div>
+        <div class="stats">
+          <div class="stat"><div class="skeleton h-6 w-16"></div><div class="lbl">Gold</div></div>
+          <div class="stat"><div class="skeleton h-6 w-16"></div><div class="lbl">Workers</div></div>
+          <div class="stat"><div class="skeleton h-6 w-16"></div><div class="lbl">Tools</div></div>
+        </div>
+      </div>
+      <div class="section-label mt-4 mb-2"><span>Rival houses</span></div>
+      <div class="list">
+        <div class="list-row"><div class="skeleton h-6 w-6"></div><div class="crest"><div class="skeleton h-6 w-6 rounded-full"></div></div><div class="who"><div class="skeleton h-5 w-28"></div><div class="skeleton h-4 w-40 mt-1"></div></div></div>
+        <div class="list-row"><div class="skeleton h-6 w-6"></div><div class="crest"><div class="skeleton h-6 w-6 rounded-full"></div></div><div class="who"><div class="skeleton h-5 w-24"></div><div class="skeleton h-4 w-36 mt-1"></div></div></div>
+        <div class="list-row"><div class="skeleton h-6 w-6"></div><div class="crest"><div class="skeleton h-6 w-6 rounded-full"></div></div><div class="who"><div class="skeleton h-5 w-28"></div><div class="skeleton h-4 w-40 mt-1"></div></div></div>
+        <div class="list-row"><div class="skeleton h-6 w-6"></div><div class="crest"><div class="skeleton h-6 w-6 rounded-full"></div></div><div class="who"><div class="skeleton h-5 w-24"></div><div class="skeleton h-4 w-36 mt-1"></div></div></div>
+      </div>
+      <div class="section-label mt-4 mb-2"><span>House ledger</span></div>
+      <div class="ledger">
+        <div class="entry"><div class="skeleton h-4 w-24"></div><div class="skeleton h-5 w-64 mt-1"></div><div class="skeleton h-4 w-24 mt-1"></div></div>
+        <div class="entry"><div class="skeleton h-4 w-24"></div><div class="skeleton h-5 w-56 mt-1"></div><div class="skeleton h-4 w-28 mt-1"></div></div>
+        <div class="entry"><div class="skeleton h-4 w-24"></div><div class="skeleton h-5 w-60 mt-1"></div><div class="skeleton h-4 w-20 mt-1"></div></div>
+      </div>
     </div>
-    <div class="section-label sans"><span>Rival houses</span><span>Tap one to challenge</span></div>
-    <div class="list sans">
-    <div class="list-row"><div class="pos">3</div><div class="crest"><svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4h11v7H6"/></svg></div><div class="who"><b>House Ysolt</b><span>Strength 1,520, 61,900 gold</span></div></div>
-    <div class="list-row you"><div class="pos">4</div><div class="crest"><svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4h11v7H6"/></svg></div><div class="who"><b>House of You</b><span>Strength 1,371, 48,250 gold</span></div></div>
-    <div class="list-row chosen"><div class="pos">5</div><div class="crest"><svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4h11v7H6"/></svg></div><div class="who"><b>House Varek</b><span>Strength 1,180, 39,400 gold</span></div><div class="tag">Chosen</div></div>
-    <div class="list-row"><div class="pos">6</div><div class="crest"><svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4h11v7H6"/></svg></div><div class="who"><b>House Holt</b><span>Strength 940, 22,600 gold</span></div></div>
+
+    <!-- Error: only when the load failed. -->
+    <div id="error" class="state-error sans" hidden>
+      <p class="text-body">Your house could not be loaded. Nothing was lost.</p>
+      <p class="text-small text-muted">Check your connection, then try again.</p>
+      <button type="button" class="btn-secondary" id="retry">Retry</button>
     </div>
-    <div class="section-label sans"><span>House ledger</span><span>Newest first</span></div>
-    <div class="ledger">
-    <div class="entry win"><div class="when">Turn 87, dawn</div><div>Your merchants outsold House Varek on market day and won 3,940 of their gold.</div><div class="delta up sans">+3,940 gold</div></div>
-    <div class="entry"><div class="when">Turn 87, dawn</div><div>Forty-two new workers took up your colours.</div><div class="delta down sans">-8,400 gold, +42 workers</div></div>
-    <div class="entry buy"><div class="when">Turn 86, dusk</div><div>The smiths delivered five Iron Ploughs to the fields.</div><div class="delta down sans">-12,000 gold, +5 tools</div></div>
-    <div class="entry"><div class="when">Turn 86, noon</div><div>Your workers' tribute filled the treasury.</div><div class="delta up sans">+3,978 gold</div></div>
-    <div class="entry win"><div class="when">Turn 85, dawn</div><div>House Ysolt's traders held the market. You won nothing this time.</div><div class="delta sans">No gold changed hands</div></div>
+
+    <!-- Guest: a visitor with no Homeroom account sees the rival houses and
+         no actions. -->
+    <div id="guest" hidden>
+      <div class="state-empty sans">
+        <p class="text-body">Sign in to Homeroom to found your house.</p>
+      </div>
+      <div class="section-label sans mt-4"><span>Rival houses</span><span>Ranked by strength</span></div>
+      <ol class="list sans" id="guest-rivals"></ol>
+    </div>
+
+    <!-- The game, once the house has loaded. -->
+    <div id="game" hidden>
+      <div class="card">
+        <div class="cmd" id="house-name">&nbsp;</div>
+        <div class="rank" id="house-rank">&nbsp;</div>
+        <div class="stats sans">
+          <div class="stat"><div class="num gold" id="stat-gold">&nbsp;</div><div class="lbl">Gold</div></div>
+          <div class="stat"><div class="num" id="stat-workers">&nbsp;</div><div class="lbl">Workers</div></div>
+          <div class="stat"><div class="num" id="stat-tools">&nbsp;</div><div class="lbl">Tools</div></div>
+        </div>
+      </div>
+      <div class="tiles sans">
+        <button type="button" class="tile btn-primary" data-action="challenge" id="btn-challenge"><div><b>Challenge</b><br><span id="challenge-sub">Choose a rival house</span></div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/></svg></button>
+        <button type="button" class="tile" data-action="recruit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><b>Recruit</b><span>200 gold per worker</span></button>
+        <button type="button" class="tile" data-action="tools"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M12 14v6M4 12h6M14 12h6"/></svg><b>Tools</b><span id="tools-sub">&nbsp;</span></button>
+      </div>
+      <div class="section-label sans"><span>Rival houses</span><span>Tap one to challenge</span></div>
+      <ol class="list sans" id="rivals"></ol>
+      <div class="section-label sans"><span>House ledger<span data-usernode-demo-note id="demo-note" hidden>, Staging demo</span></span><span>Newest first</span></div>
+      <ol class="ledger" data-house-ledger id="ledger-list"></ol>
     </div>
     </div>
+
+    <!-- Sheets. One overlay, three panels; an action that fails keeps its
+         sheet open with a line saying what failed, and nothing is spent. -->
+    <div id="overlay" class="fixed inset-0 z-10 bg-fg/50" hidden></div>
+
+    <section id="sheet-recruit" class="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-2xl rounded-t-2xl border border-line bg-surface p-4 pb-8" role="dialog" aria-modal="true" aria-labelledby="recruit-title" hidden>
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="text-heading" id="recruit-title">Recruit workers</h2>
+        <button type="button" class="btn-secondary" data-close>Close</button>
+      </div>
+      <p class="text-small text-muted mt-1 sans" id="recruit-gold">&nbsp;</p>
+      <div class="flex items-center justify-center gap-4 mt-5 mb-4">
+        <button type="button" class="btn-secondary" id="recruit-minus" aria-label="Ten fewer workers">&minus;</button>
+        <div class="w-24 text-center text-title" id="recruit-count">10</div>
+        <button type="button" class="btn-secondary" id="recruit-plus" aria-label="Ten more workers">+</button>
+      </div>
+      <p class="text-center text-body" id="recruit-cost">&nbsp;</p>
+      <p class="text-small text-danger mt-2" id="recruit-error" hidden></p>
+      <button type="button" class="btn-primary w-full mt-4" id="recruit-go">Hire 10 workers</button>
+    </section>
+
+    <section id="sheet-tools" class="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-2xl rounded-t-2xl border border-line bg-surface p-4 pb-8" role="dialog" aria-modal="true" aria-labelledby="tools-title" hidden>
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="text-heading" id="tools-title">Tools</h2>
+        <button type="button" class="btn-secondary" data-close>Close</button>
+      </div>
+      <ol class="list sans mt-3" id="tools-list"></ol>
+      <p class="text-small text-danger mt-2" id="tools-error" hidden></p>
+    </section>
+
+    <section id="sheet-report" class="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-2xl rounded-t-2xl border border-line bg-surface p-4 pb-8" role="dialog" aria-modal="true" aria-labelledby="report-title" hidden>
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="text-heading" id="report-title">Market day</h2>
+        <button type="button" class="btn-secondary" data-close>Close</button>
+      </div>
+      <div class="mt-3" id="report-body"></div>
+    </section>
   </div>
   <!-- /usernode-spec-screens@1 -->
+
+  <!-- Templates: the drawn rival row and ledger entry, kept as the shapes
+       every row is rendered from. -->
+  <template id="rival-row-tpl">
+    <button type="button" class="list-row w-full text-left"><div class="pos"></div><div class="crest"><svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4h11v7H6"/></svg></div><div class="who"><b></b><span></span></div></button>
+  </template>
+  <template id="you-row-tpl">
+    <div class="list-row you"><div class="pos"></div><div class="crest"><svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4h11v7H6"/></svg></div><div class="who"><b></b><span></span></div></div>
+  </template>
+  <template id="ledger-entry-tpl">
+    <li class="entry"><div class="when"></div><div class="what"></div><div class="delta sans"></div></li>
+  </template>
+
+  <script>
+  (function () {
+    'use strict';
+    var params = new URLSearchParams(location.search);
+    var TOKEN = params.get('token') || '';
+    var DEMO = params.get('demo') === '1' ? '?demo=1' : '';
+    var state = null;
+    var recruitCount = 10;
+    var busy = false;
+
+    var $ = function (id) { return document.getElementById(id); };
+    var fmt = function (n) { return Number(n).toLocaleString('en-US'); };
+    var esc = function (s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    };
+
+    function show(el) { el.hidden = false; }
+    function hide(el) { el.hidden = true; }
+
+    function api(path, body) {
+      var opts = { headers: {} };
+      if (TOKEN) opts.headers['x-usernode-token'] = TOKEN;
+      if (body) {
+        opts.method = 'POST';
+        opts.headers['content-type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+      }
+      return fetch('/api/' + path + DEMO, opts).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          if (!res.ok) {
+            var err = new Error(data.error || 'The request did not go through.');
+            err.account = data.error === 'account_required';
+            throw err;
+          }
+          return data;
+        });
+      });
+    }
+
+    // ── Loading, error, guest ────────────────────────────────────────────
+    function showLoading() {
+      show($('loading'));
+      hide($('error'));
+      hide($('guest'));
+      hide($('game'));
+    }
+    function showError() {
+      hide($('loading'));
+      show($('error'));
+      hide($('guest'));
+      hide($('game'));
+    }
+
+    // ── Rendering ────────────────────────────────────────────────────────
+    function renderAll() {
+      document.getElementById('demo-note').hidden = !DEMO;
+      renderTop();
+      renderCard();
+      renderRivals($('rivals'), state.houses);
+      renderLedger(state.ledger);
+      renderToolsSheet();
+      updateToolsSub();
+      updateChallengeBtn();
+      hide($('loading'));
+      hide($('error'));
+      hide($('guest'));
+      show($('game'));
+    }
+
+    function renderTop() {
+      var when = new Date(state.nextTributeAt);
+      var time = when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      $('turn-line').textContent = 'Turn ' + state.turn + ', next tribute at ' + time;
+    }
+
+    function renderCard() {
+      $('house-name').textContent = state.house.name;
+      $('house-rank').textContent = 'Rank ' + state.rank + ' of ' + state.houseCount + ' houses, strength ' + fmt(state.strength);
+      $('stat-gold').textContent = fmt(state.house.gold);
+      $('stat-workers').textContent = fmt(state.house.workers);
+      $('stat-tools').textContent = fmt(state.house.tools);
+      $('recruit-gold').textContent = 'Treasury ' + fmt(state.house.gold) + ' gold · 200 gold per worker';
+    }
+
+    // One rival row, drawn shape: position, crest, name, strength and gold;
+    // a tag where the state says so.
+    function rivalRow(h, pos, selectable) {
+      var tpl = $(h.you ? 'you-row-tpl' : 'rival-row-tpl');
+      var row = tpl.content.firstElementChild.cloneNode(true);
+      row.querySelector('.pos').textContent = pos;
+      row.querySelector('.who b').textContent = h.name;
+      var line = 'Strength ' + fmt(h.strength) + ', ' + fmt(h.gold) + ' gold';
+      if (h.met && !h.you) line += ', already met this turn';
+      row.querySelector('.who span').textContent = line;
+      if (h.you) {
+        row.disabled = true;
+        return row;
+      }
+      if (selectable && h.id === state.selected) {
+        var tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.textContent = 'Chosen';
+        row.appendChild(tag);
+      }
+      if (selectable) {
+        row.addEventListener('click', function () {
+          state.selected = (state.selected === h.id) ? null : h.id;
+          renderRivals($('rivals'), state.houses);
+          updateChallengeBtn();
+        });
+      }
+      return row;
+    }
+
+    function renderRivals(ol, houses) {
+      ol.textContent = '';
+      var selectable = ol === $('rivals');
+      houses.forEach(function (h, i) { ol.appendChild(rivalRow(h, i + 1, selectable)); });
+    }
+
+    function updateChallengeBtn() {
+      var btn = $('btn-challenge');
+      var sub = $('challenge-sub');
+      var chosen = null;
+      for (var i = 0; i < state.houses.length; i++) {
+        if (state.houses[i].id !== null && state.houses[i].id === state.selected) chosen = state.houses[i];
+      }
+      if (!chosen) {
+        btn.disabled = true;
+        sub.textContent = 'Choose a rival house';
+      } else if (chosen.met) {
+        btn.disabled = true;
+        sub.textContent = 'Already met this turn';
+      } else {
+        btn.disabled = busy;
+        sub.textContent = 'Market day against ' + chosen.name;
+      }
+    }
+
+    // One chronicle entry: the turn and part of day in italics, the line,
+    // and the gold, worker or tool change.
+    function entryNode(e) {
+      var li = $('ledger-entry-tpl').content.firstElementChild.cloneNode(true);
+      li.className = 'entry' + (e.kind.indexOf('challenge') === 0 ? ' win' : e.kind === 'tools' ? ' buy' : '');
+      li.querySelector('.when').textContent = 'Turn ' + e.turn + ', ' + e.part;
+      li.querySelector('.what').textContent = e.text;
+      var delta = li.querySelector('.delta');
+      delta.textContent = deltaText(e);
+      if (e.gold > 0) delta.className = 'delta sans up';
+      else if (e.gold < 0) delta.className = 'delta sans down';
+      return li;
+    }
+
+    function deltaText(e) {
+      if (e.kind === 'challenge_held') return 'No gold changed hands';
+      var parts = [];
+      if (e.gold) parts.push((e.gold > 0 ? '+' : '-') + fmt(Math.abs(e.gold)) + ' gold');
+      if (e.workers) parts.push('+' + fmt(e.workers) + ' worker' + (e.workers === 1 ? '' : 's'));
+      if (e.tools) parts.push('+' + fmt(e.tools) + ' tool' + (e.tools === 1 ? '' : 's'));
+      return parts.join(', ');
+    }
+
+    function renderLedger(entries) {
+      var ol = $('ledger-list');
+      ol.textContent = '';
+      entries.forEach(function (e) { ol.appendChild(entryNode(e)); });
+    }
+
+    function applyState(data) {
+      var selected = state ? state.selected : null;
+      state = data;
+      state.selected = selected;
+      renderAll();
+    }
+
+    // ── Sheets ───────────────────────────────────────────────────────────
+    var SHEETS = ['sheet-recruit', 'sheet-tools', 'sheet-report'];
+    function openSheet(id) {
+      SHEETS.forEach(function (s) { $(s).hidden = s !== id; });
+      show($('overlay'));
+      var sheet = $(id);
+      var btn = sheet.querySelector('button');
+      if (btn) btn.focus();
+    }
+    function closeSheets() {
+      SHEETS.forEach(function (s) { hide($(s)); });
+      hide($('overlay'));
+    }
+    $('overlay').addEventListener('click', closeSheets);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeSheets();
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function (b) {
+      b.addEventListener('click', closeSheets);
+    });
+
+    // Recruit: a stepper of tens, from 10 up to what the treasury pays.
+    function openRecruit() {
+      recruitCount = 10;
+      hide($('recruit-error'));
+      updateRecruit();
+      openSheet('sheet-recruit');
+    }
+    function recruitMax() {
+      var afford = Math.floor(state.house.gold / state.workerCost);
+      return Math.max(0, afford - (afford % 10));
+    }
+    function updateRecruit() {
+      var max = recruitMax();
+      if (recruitCount > max) recruitCount = Math.max(10, max);
+      $('recruit-count').textContent = fmt(recruitCount);
+      $('recruit-minus').disabled = recruitCount <= 10;
+      $('recruit-plus').disabled = recruitCount >= max;
+      var canPay = state.house.gold >= state.workerCost * recruitCount;
+      $('recruit-cost').textContent = canPay
+        ? fmt(recruitCount) + ' workers for ' + fmt(state.workerCost * recruitCount) + ' gold'
+        : 'The treasury cannot pay for 10 workers yet';
+      var go = $('recruit-go');
+      go.textContent = 'Hire ' + fmt(recruitCount) + ' workers';
+      go.disabled = !canPay || busy;
+    }
+    $('recruit-minus').addEventListener('click', function () { recruitCount = Math.max(10, recruitCount - 10); updateRecruit(); });
+    $('recruit-plus').addEventListener('click', function () { recruitCount = Math.min(recruitMax(), recruitCount + 10); updateRecruit(); });
+    $('recruit-go').addEventListener('click', function () {
+      act('recruit', { count: recruitCount }, { error: $('recruit-error'), close: true });
+    });
+
+    // Tools: one Buy button per tool; the sheet stays open so more can be
+    // bought.
+    var TOOL_BY_KEY = {};
+    function renderToolsSheet() {
+      var ol = $('tools-list');
+      ol.textContent = '';
+      (state.toolDefs || []).forEach(function (t) {
+        TOOL_BY_KEY[t.key] = t;
+        var li = document.createElement('li');
+        li.className = 'list-row';
+        li.innerHTML = '<div class="who"><b></b><span></span></div>' +
+          '<div class="text-right"><div class="delta sans">' + fmt(t.price) + ' gold</div>' +
+          '<div class="lbl">Own ' + fmt((state.tools || {})[t.key] || 0) + '</div></div>';
+        var buy = document.createElement('button');
+        buy.type = 'button';
+        buy.className = 'btn-secondary';
+        buy.textContent = 'Buy';
+        buy.disabled = busy || state.house.gold < t.price;
+        buy.addEventListener('click', function () {
+          act('tools', { tool: t.key }, { error: $('tools-error') });
+        });
+        li.appendChild(buy);
+        ol.appendChild(li);
+      });
+    }
+    function updateToolsSub() {
+      var next = null;
+      (state.toolDefs || []).forEach(function (t) {
+        if (!next && !(state.tools || {})[t.key]) next = t;
+      });
+      $('tools-sub').textContent = next ? 'Next: ' + next.name : 'Every tool owned';
+    }
+
+    // The market-day report, in the ledger's own voice.
+    function showReport(r) {
+      var body = $('report-body');
+      if (r.error) {
+        body.innerHTML = '<p class="text-small text-danger sans">' + esc(r.error) + '</p>';
+      } else {
+        body.innerHTML = '<ol class="ledger">' + entryHTML({
+          turn: state.turn, part: r.part, kind: r.won ? 'challenge_won' : 'challenge_held',
+          text: r.text, gold: r.gold, workers: 0, tools: 0,
+        }) + '</ol><p class="text-body mt-3">Your strength ' + fmt(r.yourStrength) +
+          ' against ' + esc(r.rivalName) + '\'s ' + fmt(r.rivalStrength) + '.</p>';
+      }
+      openSheet('sheet-report');
+    }
+    function entryHTML(e) {
+      var edge = e.kind.indexOf('challenge') === 0 ? ' win' : e.kind === 'tools' ? ' buy' : '';
+      var cls = e.gold > 0 ? ' up' : e.gold < 0 ? ' down' : '';
+      return '<li class="entry' + edge + '"><div class="when">Turn ' + e.turn + ', ' + esc(e.part) +
+        '</div><div>' + esc(e.text) + '</div><div class="delta sans' + cls + '">' + esc(deltaText(e)) + '</div></li>';
+    }
+
+    // Run an action; on success apply the server's numbers (the client
+    // never works them out itself). A failure keeps the sheet open with
+    // the line saying what failed.
+    function act(path, body, opts) {
+      if (busy) return;
+      busy = true;
+      updateChallengeBtn(); updateRecruit(); renderToolsSheet();
+      api(path, body).then(function (data) {
+        busy = false;
+        if (opts.close) closeSheets();
+        applyState(data);
+        if (data.report) showReport({ part: data.report.part, text: data.report.text, won: data.report.won, gold: data.report.gold, yourStrength: data.report.yourStrength, rivalStrength: data.report.rivalStrength, rivalName: data.report.rivalName });
+      }).catch(function (err) {
+        busy = false;
+        var message = err.account
+          ? 'Sign in to Homeroom to continue.'
+          : err.message;
+        if (path === 'challenge') {
+          showReport({ error: message });
+        } else if (opts.error) {
+          opts.error.textContent = message;
+          show(opts.error);
+        }
+        updateChallengeBtn(); updateRecruit(); renderToolsSheet();
+      });
+    }
+
+    // ── Wiring ───────────────────────────────────────────────────────────
+    document.querySelector('[data-action="recruit"]').addEventListener('click', openRecruit);
+    document.querySelector('[data-action="tools"]').addEventListener('click', function () {
+      hide($('tools-error'));
+      renderToolsSheet();
+      openSheet('sheet-tools');
+    });
+    $('btn-challenge').addEventListener('click', function () {
+      if (state.selected == null) return;
+      act('challenge', { rivalId: state.selected }, {});
+    });
+    $('retry').addEventListener('click', load);
+
+    function renderGuest(data) {
+      document.getElementById('demo-note').hidden = true;
+      renderRivals($('guest-rivals'), data.houses.slice().sort(function (a, b) { return b.strength - a.strength; }));
+      hide($('loading'));
+      hide($('error'));
+      show($('guest'));
+      hide($('game'));
+    }
+
+    function load() {
+      showLoading();
+      api('house').then(function (data) {
+        if (!data.house) { renderGuest(data); return; }
+        data.selected = null;
+        applyState(data);
+      }).catch(function (err) {
+        console.warn('house load failed: ' + err.message);
+        showError();
+      });
+    }
+
+    load();
+  })();
+  </script>
 </body>
 </html>
