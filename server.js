@@ -157,10 +157,26 @@ const RIVAL_GROWTH_STRENGTH = 4;   // strength each rival gains per turn
 const RIVAL_GROWTH_GOLD = 600;     // gold each rival gains per turn
 const LEDGER_LIMIT = 50;
 
+// Guard contracts: standing the treasury can hire.
+const GUARD_PRICE = 1500;          // gold per guard contract
+const GUARD_STANDING = 40;         // standing each contract adds
+
+// Market intelligence: what a report costs and how wide its range is.
+const INTEL_PRICE = 300;           // gold per report
+const INTEL_WIDTH_BASE = 0.30;     // range width, as a fraction of the truth
+const INTEL_WIDTH_PER_CLERK = 0.05;  // narrowing per Market Clerk
+const INTEL_WIDTH_MIN = 0.05;      // never sharper than this
+
+// Market-day stakes: a lost day can cost this share of your gold, and a
+// wide lead in competition wins a bigger share of a rival's.
+const LOSS_SHARE = 0.05;
+const WIN_TIERS = [[2, 0.20], [1.5, 0.15], [0, 0.10]]; // first tier whose lead is reached
+
 const TOOL_DEFS = [
   { key: 'cart', name: 'Hand Cart', price: 1000, bonus: 3 },
   { key: 'plough', name: 'Iron Plough', price: 2400, bonus: 6 },
   { key: 'mill', name: 'Mill Wheel', price: 5000, bonus: 15 },
+  { key: 'clerk', name: 'Market Clerk', price: 1500, bonus: 0, intel: true },
 ];
 const TOOL_BY_KEY = Object.fromEntries(TOOL_DEFS.map((t) => [t.key, t]));
 
@@ -237,6 +253,19 @@ const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS ledger_house_idx ON ledger (house_id, id DESC);
   CREATE INDEX IF NOT EXISTS rivals_house_idx ON rivals (house_id);
+  ALTER TABLE houses ADD COLUMN IF NOT EXISTS guard_contracts int NOT NULL DEFAULT 0;
+  CREATE TABLE IF NOT EXISTS intel_reports (
+    id bigserial PRIMARY KEY,
+    house_id bigint NOT NULL REFERENCES houses(id) ON DELETE CASCADE,
+    rival_id bigint NOT NULL REFERENCES rivals(id) ON DELETE CASCADE,
+    turn int NOT NULL,
+    competition_low int NOT NULL,
+    competition_high int NOT NULL,
+    gold_low bigint NOT NULL,
+    gold_high bigint NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS intel_house_idx ON intel_reports (house_id, rival_id, id DESC);
 `;
 
 // No table carries anything beyond a username, so none is staging:private.
@@ -262,6 +291,29 @@ function partOfDay(house, when) {
 
 const rivalStrength = (r, turn) => r.base_strength + RIVAL_GROWTH_STRENGTH * turn;
 const rivalGold = (r, turn) => Math.max(0, Number(r.base_gold) + RIVAL_GROWTH_GOLD * turn - Number(r.gold_taken));
+
+// Competition is what "strength" was: the house's workers plus its trade tools.
+const competitionOf = (workers, toolRows) =>
+  workers + toolRows.reduce((sum, t) => sum + t.count * (TOOL_BY_KEY[t.tool_key]?.bonus || 0), 0);
+
+// Standing guards the treasury: half the workers plus a fixed share per
+// guard contract. It decides how much of your gold survives a lost market day.
+const standingOf = (house) =>
+  Math.floor(house.workers / 2) + GUARD_STANDING * house.guard_contracts;
+
+// A market-intelligence range that always holds the truth: the width is a
+// fraction of the true value, and where the value sits inside the range is
+// chosen at random, so the middle of the range gives nothing away. Figures
+// are rounded to whole `step`s; a value of 0 gives 0 to 0.
+function intelRange(value, width, step) {
+  if (value <= 0) return [0, 0];
+  const u = Math.random();
+  const lowRaw = value * (1 - width * u);
+  return [
+    Math.floor(lowRaw / step) * step,
+    Math.ceil((lowRaw + value * width) / step) * step,
+  ];
+}
 
 async function addLedger(client, house, turn, when, kind, text, goldDelta, workersDelta, toolsDelta) {
   await client.query(
@@ -294,13 +346,13 @@ async function foundHouse(client, user, demo, now) {
 // The staging demo (see "A first version's populated demo" in the platform
 // conventions): the viewer's own house set up mid-game at turn 87, written
 // once, idempotently. Founded 86 turns ago with 5 minutes of turn 87 gone,
-// and the dozen ledger entries the screen shows. Every control works on it.
+// and the ledger entries the screen shows. Every control works on it.
 async function seedDemoHouse(client, user, now) {
   const foundedAt = new Date(now.getTime() - (DEMO_TURN - 1) * TURN_MS - 5 * 60000);
   const username = user.username || 'the founder';
   const { rows: [house] } = await client.query(
-    `INSERT INTO houses (user_id, username, demo, gold, workers, founded_at, ticked_turn)
-     VALUES ($1, $2, true, $3, $4, $5, $6)
+    `INSERT INTO houses (user_id, username, demo, gold, workers, founded_at, ticked_turn, guard_contracts)
+     VALUES ($1, $2, true, $3, $4, $5, $6, 4)
      ON CONFLICT (user_id, demo) DO NOTHING
      RETURNING *`,
     [user.id, username, 48250, 1326, foundedAt, DEMO_TURN],
@@ -315,9 +367,24 @@ async function seedDemoHouse(client, user, now) {
     );
   }
   await client.query(
-    `INSERT INTO house_tools (house_id, tool_key, count) VALUES ($1, 'cart', 3), ($1, 'plough', 6)`,
+    `INSERT INTO house_tools (house_id, tool_key, count) VALUES ($1, 'cart', 3), ($1, 'plough', 6), ($1, 'clerk', 2)`,
     [house.id],
   );
+
+  // Two market-intelligence reports the demo has already paid for.
+  const { rows: demoRivals } = await client.query(
+    'SELECT id, name FROM rivals WHERE house_id = $1', [house.id]);
+  const rivalByName = Object.fromEntries(demoRivals.map((r) => [r.name, r.id]));
+  for (const [name, repTurn, compLow, compHigh, goldLow, goldHigh] of [
+    ['House Ysolt', 86, 1390, 1700, 56300, 68700],
+    ['House Brannoc', 87, 1250, 1550, 47500, 58700],
+  ]) {
+    await client.query(
+      `INSERT INTO intel_reports (house_id, rival_id, turn, competition_low, competition_high, gold_low, gold_high)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [house.id, rivalByName[name], repTurn, compLow, compHigh, goldLow, goldHigh],
+    );
+  }
 
   // A moment inside turn T, at the given part of the day, for the seed's
   // chronicle timestamps.
@@ -332,14 +399,19 @@ async function seedDemoHouse(client, user, now) {
     [82, 'noon', 'tribute', 'Your workers\' tribute filled the treasury.', 3762, 0, 0],
     [82, 'dawn', 'recruit', 'Twenty new workers took up your colours.', -4000, 20, 0],
     [83, 'dawn', 'challenge_won', 'Your merchants outsold House Holt on market day and won 2,260 of their gold.', 2260, 0, 0],
+    [83, 'dusk', 'tools', 'Two Market Clerks took desks in the counting house.', -3000, 0, 2],
     [84, 'noon', 'tribute', 'Your workers\' tribute filled the treasury.', 3870, 0, 0],
     [84, 'dusk', 'tools', 'A Hand Cart was bought for the yards.', -1000, 0, 1],
     [85, 'dawn', 'recruit', 'Thirty new workers took up your colours.', -6000, 30, 0],
     [85, 'dawn', 'challenge_held', 'House Ysolt\'s traders held the market. You won nothing this time.', 0, 0, 0],
+    [85, 'noon', 'guards', 'Four guard contracts were signed for the warehouse.', -6000, 0, 0],
+    [86, 'dawn', 'challenge_lost', 'House Marrow\'s traders took the market and won 920 of your gold. Your standing kept the rest.', -920, 0, 0],
     [86, 'noon', 'tribute', 'Your workers\' tribute filled the treasury.', 3978, 0, 0],
     [86, 'dusk', 'tools', 'The smiths delivered five Iron Ploughs to the fields.', -12000, 0, 5],
+    [86, 'dusk', 'intel', 'Your clerks\' report on House Ysolt: competition 1,390 to 1,700, gold 56,300 to 68,700.', -300, 0, 0],
     [87, 'dawn', 'recruit', 'Forty-two new workers took up your colours.', -8400, 42, 0],
     [87, 'dawn', 'challenge_won', 'Your merchants outsold House Varek on market day and won 3,940 of their gold.', 3940, 0, 0],
+    [87, 'dawn', 'intel', 'Your clerks\' report on House Brannoc: competition 1,250 to 1,550, gold 47,500 to 58,700.', -300, 0, 0],
   ];
   for (const [turn, part, kind, text, gold, workers, tools] of entries) {
     await addLedger(client, house, turn, inTurn(turn, part), kind, text, gold, workers, tools);
@@ -367,7 +439,8 @@ async function tickHouse(client, house, now) {
 }
 
 // The whole screen's state, after any founding and ticking: the house, its
-// tools, strength and rank, all nine houses ranked by strength, when the
+// tools, competition, standing and rank, all nine houses in rank order (the
+// rivals' own figures hidden behind market-intelligence reports), when the
 // next tribute lands, and the latest 50 chronicle entries.
 async function loadState(client, house, now) {
   const turn = turnOf(house, now);
@@ -375,29 +448,60 @@ async function loadState(client, house, now) {
     'SELECT tool_key, count FROM house_tools WHERE house_id = $1', [house.id]);
   const toolCounts = {};
   let toolTotal = 0;
-  let toolStrength = 0;
   for (const row of toolRows) {
     toolCounts[row.tool_key] = row.count;
     toolTotal += row.count;
-    toolStrength += row.count * (TOOL_BY_KEY[row.tool_key]?.bonus || 0);
   }
-  const strength = house.workers + toolStrength;
+  const competition = competitionOf(house.workers, toolRows);
+  const standing = standingOf(house);
+  const clerks = toolCounts.clerk || 0;
 
   const { rows: rivalRows } = await client.query(
     'SELECT * FROM rivals WHERE house_id = $1 ORDER BY id', [house.id]);
+  // Each rival's latest market-intelligence report, if one exists.
+  const { rows: reportRows } = await client.query(
+    `SELECT DISTINCT ON (rival_id) rival_id, turn, competition_low, competition_high, gold_low, gold_high
+     FROM intel_reports WHERE house_id = $1 ORDER BY rival_id, id DESC`, [house.id]);
+  const reportByRival = {};
+  for (const rep of reportRows) {
+    reportByRival[rep.rival_id] = {
+      turn: rep.turn,
+      competitionLow: rep.competition_low,
+      competitionHigh: rep.competition_high,
+      goldLow: Number(rep.gold_low),
+      goldHigh: Number(rep.gold_high),
+    };
+  }
+
+  // Rank on true competition; only then strip the rivals' exact figures,
+  // which leave the server only in a market-day report after a meeting.
   const houses = rivalRows.map((r) => ({
     id: r.id,
     name: r.name,
-    strength: rivalStrength(r, turn),
-    gold: rivalGold(r, turn),
+    competition: rivalStrength(r, turn),
     met: r.last_met_turn >= turn,
     you: false,
+    report: reportByRival[r.id] || null,
   }));
-  houses.push({ name: 'House of ' + house.username, strength, gold: Number(house.gold), met: false, you: true });
-  houses.sort((a, b) => b.strength - a.strength || (a.you ? -1 : b.you ? 1 : 0));
-  const me = houses.find((h) => h.you);
-  const rank = houses.indexOf(me) + 1;
+  houses.push({
+    name: 'House of ' + house.username,
+    competition,
+    standing,
+    gold: Number(house.gold),
+    met: false,
+    you: true,
+  });
+  houses.sort((a, b) => b.competition - a.competition || (a.you ? -1 : b.you ? 1 : 0));
+  const rank = houses.indexOf(houses.find((h) => h.you)) + 1;
+  const ranked = houses.map((h) => h.you
+    ? { name: h.name, strength: h.competition, standing: h.standing, gold: h.gold, met: false, you: true }
+    : {
+        id: h.id, name: h.name, met: h.met, you: false,
+        report: h.report,
+        reportedThisTurn: !!(h.report && h.report.turn === turn),
+      });
 
+  const width = Math.max(INTEL_WIDTH_MIN, INTEL_WIDTH_BASE - INTEL_WIDTH_PER_CLERK * clerks);
   const { rows: entryRows } = await client.query(
     `SELECT turn, part_of_day, kind, text, gold_delta, workers_delta, tools_delta
      FROM ledger WHERE house_id = $1 ORDER BY id DESC LIMIT $2`, [house.id, LEDGER_LIMIT]);
@@ -408,17 +512,24 @@ async function loadState(client, house, now) {
       gold: Number(house.gold),
       workers: house.workers,
       tools: toolTotal,
+      guards: house.guard_contracts,
       founded: turn === 1 && house.ticked_turn === 1,
     },
     turn,
     tools: toolCounts,
     toolDefs: TOOL_DEFS,
-    strength,
+    strength: competition,
+    standing,
+    clerks,
+    intelPrice: INTEL_PRICE,
+    intelWidth: Math.round(width * 100),
+    guardPrice: GUARD_PRICE,
+    guardStanding: GUARD_STANDING,
     rank,
-    houseCount: houses.length,
+    houseCount: ranked.length,
     workerCost: WORKER_COST,
     nextTributeAt: new Date(house.founded_at.getTime() + turn * TURN_MS).toISOString(),
-    houses,
+    houses: ranked,
     ledger: entryRows.map((e) => ({
       turn: e.turn,
       part: e.part_of_day,
@@ -525,35 +636,116 @@ app.post('/api/challenge', (req, res) => withHouse(req, res, async (client, hous
     throw new ApiError(400, `${rival.name} has already been met this turn. Try again next turn.`);
   }
   const { rows: [fresh] } = await client.query(
-    'SELECT workers FROM houses WHERE id = $1', [house.id]);
+    'SELECT workers, guard_contracts, gold FROM houses WHERE id = $1', [house.id]);
   const { rows: toolRows } = await client.query(
     'SELECT tool_key, count FROM house_tools WHERE house_id = $1', [house.id]);
-  const myStrength = fresh.workers + toolRows.reduce(
-    (sum, t) => sum + t.count * (TOOL_BY_KEY[t.tool_key]?.bonus || 0), 0);
+  const myStrength = competitionOf(fresh.workers, toolRows);
   const theirStrength = rivalStrength(rival, turn);
-  const won = myStrength > theirStrength;
-  const moved = won ? Math.floor(rivalGold(rival, turn) / 10) : 0;
+  const myStanding = standingOf(fresh);
 
+  // The win's share grows with the lead; a tie counts as a loss, as before.
+  const won = myStrength > theirStrength;
+  const share = won ? WIN_TIERS.find(([ratio]) => myStrength >= theirStrength * ratio)[1] : 0;
+  const moved = won ? Math.floor(rivalGold(rival, turn) * share) : 0;
+
+  // A lost market day costs up to LOSS_SHARE of your gold; standing keeps
+  // its share of that, and all of it once it matches the rival's competition.
+  const possible = Math.floor(Number(fresh.gold) * LOSS_SHARE);
+  let lost = 0;
+  if (!won && possible > 0 && myStanding < theirStrength) {
+    lost = Math.min(possible, Math.round(possible * (1 - myStanding / theirStrength)));
+  }
+
+  // What you lose, the rival gains.
   await client.query('UPDATE rivals SET last_met_turn = $1, gold_taken = gold_taken + $2 WHERE id = $3',
-    [turn, moved, rival.id]);
+    [turn, won ? moved : -lost, rival.id]);
   let text;
+  let entryKind;
   if (won) {
     await client.query('UPDATE houses SET gold = gold + $1 WHERE id = $2', [moved, house.id]);
     text = `Your merchants outsold ${rival.name} on market day and won ${fmt(moved)} of their gold.`;
-    await addLedger(client, house, turn, req.now, 'challenge_won', text, moved, 0, 0);
+    entryKind = 'challenge_won';
+    await addLedger(client, house, turn, req.now, entryKind, text, moved, 0, 0);
+  } else if (lost > 0) {
+    await client.query('UPDATE houses SET gold = gold - $1 WHERE id = $2', [lost, house.id]);
+    text = `${rival.name}'s traders took the market and won ${fmt(lost)} of your gold. Your standing kept the rest.`;
+    entryKind = 'challenge_lost';
+    await addLedger(client, house, turn, req.now, entryKind, text, -lost, 0, 0);
+  } else if (myStanding >= theirStrength) {
+    text = `${rival.name}'s traders held the market, but your standing kept every coin. No gold changed hands.`;
+    entryKind = 'challenge_held';
+    await addLedger(client, house, turn, req.now, entryKind, text, 0, 0, 0);
   } else {
     text = `${rival.name}'s traders held the market. You won nothing this time.`;
-    await addLedger(client, house, turn, req.now, 'challenge_held', text, 0, 0, 0);
+    entryKind = 'challenge_held';
+    await addLedger(client, house, turn, req.now, entryKind, text, 0, 0, 0);
   }
   return {
+    kind: 'challenge',
     rivalName: rival.name,
     yourStrength: myStrength,
     rivalStrength: theirStrength,
+    yourStanding: myStanding,
     won,
-    gold: moved,
+    share: won ? Math.round(share * 100)
+      : possible > 0 ? Math.round((myStanding / theirStrength) * 100) : null,
+    possible,
+    gold: won ? moved : -lost,
+    entryKind,
     part: partOfDay(house, req.now),
     text,
   };
+}));
+
+// Market intelligence: pay for a rough, always-true range on one rival.
+app.post('/api/intel', (req, res) => withHouse(req, res, async (client, house, turn, req) => {
+  const rivalId = req.body && req.body.rivalId;
+  const { rows: [rival] } = await client.query(
+    'SELECT * FROM rivals WHERE id = $1 AND house_id = $2', [rivalId, house.id]);
+  if (!rival) throw new ApiError(404, 'That house is not one of your rivals.');
+  const { rows: [existing] } = await client.query(
+    'SELECT id FROM intel_reports WHERE house_id = $1 AND rival_id = $2 AND turn = $3',
+    [house.id, rival.id, turn]);
+  if (existing) {
+    throw new ApiError(400, `You already have this turn's report on ${rival.name}.`);
+  }
+  if (Number(house.gold) < INTEL_PRICE) {
+    throw new ApiError(400, `The treasury cannot pay ${fmt(INTEL_PRICE)} gold. Nothing was spent.`);
+  }
+  const { rows: clerkRows } = await client.query(
+    `SELECT count FROM house_tools WHERE house_id = $1 AND tool_key = 'clerk'`, [house.id]);
+  const clerks = clerkRows.length ? clerkRows[0].count : 0;
+  const width = Math.max(INTEL_WIDTH_MIN, INTEL_WIDTH_BASE - INTEL_WIDTH_PER_CLERK * clerks);
+  const [compLow, compHigh] = intelRange(rivalStrength(rival, turn), width, 10);
+  const [goldLow, goldHigh] = intelRange(rivalGold(rival, turn), width, 100);
+  await client.query('UPDATE houses SET gold = gold - $1 WHERE id = $2', [INTEL_PRICE, house.id]);
+  await client.query(
+    `INSERT INTO intel_reports (house_id, rival_id, turn, competition_low, competition_high, gold_low, gold_high)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [house.id, rival.id, turn, compLow, compHigh, goldLow, goldHigh]);
+  const text = `Your clerks' report on ${rival.name}: competition ${fmt(compLow)} to ${fmt(compHigh)}, gold ${fmt(goldLow)} to ${fmt(goldHigh)}.`;
+  await addLedger(client, house, turn, req.now, 'intel', text, -INTEL_PRICE, 0, 0);
+  return {
+    kind: 'intel',
+    rivalName: rival.name,
+    part: partOfDay(house, req.now),
+    text,
+    width,
+    entryKind: 'intel',
+    gold: -INTEL_PRICE,
+  };
+}));
+
+// Guard contracts: standing for the warehouse, bought like tools.
+app.post('/api/guards', (req, res) => withHouse(req, res, async (client, house, turn, req) => {
+  if (Number(house.gold) < GUARD_PRICE) {
+    throw new ApiError(400, `The treasury cannot pay ${fmt(GUARD_PRICE)} gold. Nothing was spent.`);
+  }
+  await client.query('UPDATE houses SET gold = gold - $1, guard_contracts = guard_contracts + 1 WHERE id = $2',
+    [GUARD_PRICE, house.id]);
+  await addLedger(client, house, turn, req.now, 'guards',
+    `A guard contract was signed for the warehouse for ${fmt(GUARD_PRICE)} gold.`, -GUARD_PRICE, 0, 0);
+  return null;
 }));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
