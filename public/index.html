@@ -78,6 +78,7 @@
        classes, swap this link for the platform-hosted engine instead:
        <script src="/usernode-tailwind/v1/tailwind.js"></script> -->
   <link rel="stylesheet" href="/tailwind.css">
+  <link rel="stylesheet" href="/screens.css">
   <!-- The platform bridge, centrally hosted and loaded by RELATIVE path (the
        handler in server.js serves it under a plain "node server.js"; the
        platform's edge answers it everywhere else). Never vendor it and never
@@ -115,21 +116,42 @@
   <!-- (Named in prose on purpose: Tailwind compiles any class-name word in
        these files, comments included, and the starter should ship only the
        components its screen uses.) -->
-  <main class="mx-auto flex max-w-md flex-col gap-8 px-4 py-10">
-
-    <!-- usernode-starter-notice@1 — starter-template messaging. When building
-         the user's real app, replace this whole screen and delete this block,
-         both sentinel comments included. -->
-    <section class="card flex flex-col items-start gap-3">
-      <div class="flex h-20 w-20 items-center justify-center rounded-2xl border border-line bg-ground text-title">⚔️</div>
-      <span class="rounded-full bg-raised px-3 py-1 text-small font-medium text-muted">Starter template</span>
-      <h1 class="text-title">ChaosRoom</h1>
-      <p class="text-body text-muted">Welcome to your new app! Everything on this screen is placeholder content that came with it.</p>
-      <p class="text-body text-muted">To change this app, ask Homeroom bot: tap the <strong class="font-semibold text-fg">Homeroom icon</strong>, then <strong class="font-semibold text-fg">Suggest an improvement</strong>. Describe what you'd like in plain English, and it will be turned into your real app.</p>
-    </section>
-    <!-- /usernode-starter-notice@1 -->
-
-    <p class="text-center text-small text-muted">Built on Homeroom. This template screen disappears once you build your real app.</p>
-  </main>
+  <!-- usernode-spec-screens@1: the screens the spec drew, carried over by the platform as this
+       first version's starting point. Their styles are in public/screens.css.
+       Change them where behaviour needs it; do not redraw them. -->
+  <div data-spec-screen="1">
+    <div class="app">
+    <div class="top"><div class="name">ChaosRoom</div><div class="turn sans">Turn 87, next tribute at 14:30</div></div>
+    <div class="card">
+    <div class="cmd">House of You</div>
+    <div class="rank">Rank 4 of 9 houses, strength 1,371</div>
+    <div class="stats sans">
+    <div class="stat"><div class="num gold">48,250</div><div class="lbl">Gold</div></div>
+    <div class="stat"><div class="num">1,326</div><div class="lbl">Workers</div></div>
+    <div class="stat"><div class="num">9</div><div class="lbl">Tools</div></div>
+    </div></div>
+    <div class="tiles sans">
+    <div class="tile btn-primary"><div><b>Challenge</b><br><span>Market day against House Varek</span></div><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/></svg></div>
+    <div class="tile"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><b>Recruit</b><span>200 gold per worker</span></div>
+    <div class="tile"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M12 14v6M4 12h6M14 12h6"/></svg><b>Tools</b><span>Next: Mill Wheel</span></div>
+    </div>
+    <div class="section-label sans"><span>Rival houses</span><span>Tap one to challenge</span></div>
+    <div class="list sans">
+    <div class="list-row"><div class="pos">3</div><div class="crest"><svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4h11v7H6"/></svg></div><div class="who"><b>House Ysolt</b><span>Strength 1,520, 61,900 gold</span></div></div>
+    <div class="list-row you"><div class="pos">4</div><div class="crest"><svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4h11v7H6"/></svg></div><div class="who"><b>House of You</b><span>Strength 1,371, 48,250 gold</span></div></div>
+    <div class="list-row chosen"><div class="pos">5</div><div class="crest"><svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4h11v7H6"/></svg></div><div class="who"><b>House Varek</b><span>Strength 1,180, 39,400 gold</span></div><div class="tag">Chosen</div></div>
+    <div class="list-row"><div class="pos">6</div><div class="crest"><svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4h11v7H6"/></svg></div><div class="who"><b>House Holt</b><span>Strength 940, 22,600 gold</span></div></div>
+    </div>
+    <div class="section-label sans"><span>House ledger</span><span>Newest first</span></div>
+    <div class="ledger">
+    <div class="entry win"><div class="when">Turn 87, dawn</div><div>Your merchants outsold House Varek on market day and won 3,940 of their gold.</div><div class="delta up sans">+3,940 gold</div></div>
+    <div class="entry"><div class="when">Turn 87, dawn</div><div>Forty-two new workers took up your colours.</div><div class="delta down sans">-8,400 gold, +42 workers</div></div>
+    <div class="entry buy"><div class="when">Turn 86, dusk</div><div>The smiths delivered five Iron Ploughs to the fields.</div><div class="delta down sans">-12,000 gold, +5 tools</div></div>
+    <div class="entry"><div class="when">Turn 86, noon</div><div>Your workers' tribute filled the treasury.</div><div class="delta up sans">+3,978 gold</div></div>
+    <div class="entry win"><div class="when">Turn 85, dawn</div><div>House Ysolt's traders held the market. You won nothing this time.</div><div class="delta sans">No gold changed hands</div></div>
+    </div>
+    </div>
+  </div>
+  <!-- /usernode-spec-screens@1 -->
 </body>
 </html>
