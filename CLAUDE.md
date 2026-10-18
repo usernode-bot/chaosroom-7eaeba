@@ -98,11 +98,16 @@ tables you've marked private), etc.
 A game of rival trading houses, built with the group. The player runs one
 house: workers pay gold tribute every 30-minute turn, recruiting hires more
 workers, tools make the house stronger, and a market-day challenge against
-one of the game's eight rival houses moves 10% of their gold when the
-player's strength is greater. Everything is written into the house ledger,
+one of the game's eight rival houses moves a share of their gold when the
+player's competition is greater. Everything is written into the house ledger,
 a court chronicle. (Kings of Chaos was the ask; Homeroom's content rules
 forbid combat and weapons, so the war became a trading rivalry — workers,
-tools, market days. Keep that swap for anything later.)
+tools, market days. Keep that swap for anything later. The rivalry mapping,
+settled with Marc on 2026-10-18: attack → competition and the market-day
+challenge, defence → standing and guard contracts, spying → market
+intelligence and Market Clerks. There is no sentry equivalent; rivals do
+not gather intelligence on the player. Never reintroduce combat words —
+attack, spy, defence, sentry — into the UI.)
 
 ## Design
 

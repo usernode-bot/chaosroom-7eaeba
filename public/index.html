@@ -139,6 +139,8 @@
         <div class="tile btn-primary"><div><div class="skeleton h-6 w-28"></div><div class="skeleton h-4 w-44 mt-1"></div></div><div class="skeleton h-7 w-7"></div></div>
         <div class="tile"><div class="skeleton h-6 w-6"></div><div class="skeleton h-5 w-20 mt-1"></div><div class="skeleton h-4 w-32 mt-1"></div></div>
         <div class="tile"><div class="skeleton h-6 w-6"></div><div class="skeleton h-5 w-16 mt-1"></div><div class="skeleton h-4 w-28 mt-1"></div></div>
+        <div class="tile"><div class="skeleton h-6 w-6"></div><div class="skeleton h-5 w-24 mt-1"></div><div class="skeleton h-4 w-36 mt-1"></div></div>
+        <div class="tile"><div class="skeleton h-6 w-6"></div><div class="skeleton h-5 w-28 mt-1"></div><div class="skeleton h-4 w-32 mt-1"></div></div>
       </div>
       <div class="section-label mt-4 mb-2"><span>Rival houses</span></div>
       <div class="list">
@@ -171,7 +173,7 @@
       <div class="state-empty sans">
         <p class="text-body">Sign in to Homeroom to found your house.</p>
       </div>
-      <div class="section-label sans mt-4"><span>Rival houses</span><span>Ranked by strength</span></div>
+      <div class="section-label sans mt-4"><span>Rival houses</span><span>Ranked by competition</span></div>
       <ol class="list sans" id="guest-rivals"></ol>
     </div>
 
@@ -190,8 +192,10 @@
         <button type="button" class="tile btn-primary" data-action="challenge" id="btn-challenge"><div><b>Challenge</b><br><span id="challenge-sub">Tap a rival below to choose it</span></div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5"/></svg></button>
         <button type="button" class="tile" data-action="recruit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><b>Recruit</b><span>200 gold per worker</span></button>
         <button type="button" class="tile" data-action="tools"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M12 14v6M4 12h6M14 12h6"/></svg><b>Tools</b><span id="tools-sub">&nbsp;</span></button>
+        <button type="button" class="tile" data-action="intel" id="btn-intel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z"/></svg><b>Market intelligence</b><span id="intel-sub">&nbsp;</span></button>
+        <button type="button" class="tile" data-action="guards" id="btn-guards"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v3"/></svg><b>Guard contracts</b><span id="guards-sub">&nbsp;</span></button>
       </div>
-      <div class="section-label sans"><span>Rival houses</span><span>Tap one to challenge</span></div>
+      <div class="section-label sans"><span>Rival houses</span><span>Tap one to choose it</span></div>
       <ol class="list sans" id="rivals"></ol>
       <div class="section-label sans"><span>House ledger<span data-usernode-demo-note id="demo-note" hidden>, Staging demo</span></span><span>Newest first</span></div>
       <ol class="ledger" data-house-ledger id="ledger-list"></ol>
@@ -225,6 +229,18 @@
       </div>
       <ol class="list sans mt-3" id="tools-list"></ol>
       <p class="text-small text-danger mt-2" id="tools-error" hidden></p>
+    </section>
+
+    <section id="sheet-guards" class="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-2xl rounded-t-2xl border border-line bg-surface p-4 pb-8" role="dialog" aria-modal="true" aria-labelledby="guards-title" hidden>
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="text-heading" id="guards-title">Guard contracts</h2>
+        <button type="button" class="btn-secondary" data-close>Close</button>
+      </div>
+      <p class="text-small text-muted mt-1 sans" id="guards-line">&nbsp;</p>
+      <ol class="list sans mt-3">
+        <li class="list-row"><div class="who"><b>Guard contract</b><span id="guards-standing">&nbsp;</span></div><div class="text-right"><div class="delta sans" id="guards-price">&nbsp;</div><div class="lbl" id="guards-own">&nbsp;</div></div><button type="button" class="btn-secondary" id="guards-buy">Buy</button></li>
+      </ol>
+      <p class="text-small text-danger mt-2" id="guards-error" hidden></p>
     </section>
 
     <section id="sheet-report" class="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-2xl rounded-t-2xl border border-line bg-surface p-4 pb-8" role="dialog" aria-modal="true" aria-labelledby="report-title" hidden>
@@ -313,7 +329,9 @@
       renderLedger(state.ledger);
       renderToolsSheet();
       updateToolsSub();
+      renderGuardsSheet();
       updateChallengeBtn();
+      updateIntelBtn();
       hide($('loading'));
       hide($('error'));
       hide($('guest'));
@@ -330,21 +348,34 @@
       // A long house name drops to 24px so it stays on one line.
       $('house-name').className = 'cmd' + (state.house.name.length > 18 ? ' cmd-sm' : '');
       $('house-name').textContent = state.house.name;
-      $('house-rank').textContent = 'Rank ' + state.rank + ' of ' + state.houseCount + ' houses, strength ' + fmt(state.strength);
+      $('house-rank').textContent = 'Rank ' + state.rank + ' of ' + state.houseCount + ' houses, competition ' + fmt(state.strength) + ', standing ' + fmt(state.standing);
       $('stat-gold').textContent = fmt(state.house.gold);
       $('stat-workers').textContent = fmt(state.house.workers);
       $('stat-tools').textContent = fmt(state.house.tools);
+      $('guards-sub').textContent = 'Own ' + fmt(state.house.guards) + ', standing ' + fmt(state.standing);
       $('recruit-gold').textContent = 'Treasury ' + fmt(state.house.gold) + ' gold · 200 gold per worker';
     }
 
-    // One rival row, drawn shape: position, crest, name, strength and gold;
-    // a tag where the state says so.
+    // One rival row, drawn shape: position, crest, name, rivalry line;
+    // a tag where the state says so. A rival's own figures are hidden
+    // behind your latest market-intelligence report on it.
     function rivalRow(h, pos, selectable) {
       var tpl = $(h.you ? 'you-row-tpl' : 'rival-row-tpl');
       var row = tpl.content.firstElementChild.cloneNode(true);
       row.querySelector('.pos').textContent = pos;
       row.querySelector('.who b').textContent = h.name;
-      var line = 'Strength ' + fmt(h.strength) + ', ' + fmt(h.gold) + ' gold';
+      var line;
+      if (h.you) {
+        line = 'Competition ' + fmt(h.strength) + ', standing ' + fmt(state.standing) + ', ' + fmt(h.gold) + ' gold';
+      } else if (h.report) {
+        line = 'Turn ' + h.report.turn + ' report: competition ' + fmt(h.report.competitionLow) +
+          ' to ' + fmt(h.report.competitionHigh) + ', gold ' + fmt(h.report.goldLow) +
+          ' to ' + fmt(h.report.goldHigh);
+      } else if ('report' in h) {
+        line = 'No market intelligence yet';
+      } else {
+        line = 'Competition ' + fmt(h.strength) + ', ' + fmt(h.gold) + ' gold';
+      }
       if (h.met && !h.you) line += ', already met this turn';
       row.querySelector('.who span').textContent = line;
       if (h.you) {
@@ -362,6 +393,7 @@
           state.selected = (state.selected === h.id) ? null : h.id;
           renderRivals($('rivals'), state.houses);
           updateChallengeBtn();
+          updateIntelBtn();
         });
       }
       return row;
@@ -373,13 +405,18 @@
       houses.forEach(function (h, i) { ol.appendChild(rivalRow(h, i + 1, selectable)); });
     }
 
+    function chosenRival() {
+      if (state.selected == null) return null;
+      for (var i = 0; i < state.houses.length; i++) {
+        if (!state.houses[i].you && state.houses[i].id === state.selected) return state.houses[i];
+      }
+      return null;
+    }
+
     function updateChallengeBtn() {
       var btn = $('btn-challenge');
       var sub = $('challenge-sub');
-      var chosen = null;
-      for (var i = 0; i < state.houses.length; i++) {
-        if (state.houses[i].id !== null && state.houses[i].id === state.selected) chosen = state.houses[i];
-      }
+      var chosen = chosenRival();
       if (!chosen) {
         btn.disabled = true;
         sub.textContent = 'Tap a rival below to choose it';
@@ -392,11 +429,37 @@
       }
     }
 
+    // The market-intelligence tile follows the chosen rival like Challenge.
+    function updateIntelBtn() {
+      var btn = $('btn-intel');
+      var sub = $('intel-sub');
+      var chosen = chosenRival();
+      if (!chosen) {
+        btn.disabled = true;
+        sub.textContent = 'Choose a rival first';
+      } else if (chosen.reportedThisTurn) {
+        btn.disabled = true;
+        sub.textContent = 'Report already in this turn';
+      } else if (state.house.gold < state.intelPrice) {
+        btn.disabled = true;
+        sub.textContent = 'The treasury cannot pay ' + fmt(state.intelPrice) + ' gold';
+      } else {
+        btn.disabled = busy;
+        sub.textContent = fmt(state.intelPrice) + ' gold on ' + chosen.name;
+      }
+    }
+
     // One chronicle entry: the turn and part of day in italics, the line,
     // and the gold, worker or tool change.
+    // Ledger edges: market days red, purchases gold, everything else plain.
+    function edgeClass(kind) {
+      if (kind.indexOf('challenge') === 0) return ' win';
+      return kind === 'tools' || kind === 'guards' || kind === 'intel' ? ' buy' : '';
+    }
+
     function entryNode(e) {
       var li = $('ledger-entry-tpl').content.firstElementChild.cloneNode(true);
-      li.className = 'entry' + (e.kind.indexOf('challenge') === 0 ? ' win' : e.kind === 'tools' ? ' buy' : '');
+      li.className = 'entry' + edgeClass(e.kind);
       li.querySelector('.when').textContent = 'Turn ' + e.turn + ', ' + e.part;
       li.querySelector('.what').textContent = e.text;
       var delta = li.querySelector('.delta');
@@ -429,7 +492,7 @@
     }
 
     // ── Sheets ───────────────────────────────────────────────────────────
-    var SHEETS = ['sheet-recruit', 'sheet-tools', 'sheet-report'];
+    var SHEETS = ['sheet-recruit', 'sheet-tools', 'sheet-guards', 'sheet-report'];
     function openSheet(id) {
       SHEETS.forEach(function (s) { $(s).hidden = s !== id; });
       show($('overlay'));
@@ -493,6 +556,10 @@
         li.innerHTML = '<div class="who"><b></b><span></span></div>' +
           '<div class="text-right"><div class="delta sans">' + fmt(t.price) + ' gold</div>' +
           '<div class="lbl">Own ' + fmt((state.tools || {})[t.key] || 0) + '</div></div>';
+        li.querySelector('.who b').textContent = t.name;
+        li.querySelector('.who span').textContent = t.intel
+          ? 'Sharper market intelligence'
+          : '+' + fmt(t.bonus) + ' competition';
         var buy = document.createElement('button');
         buy.type = 'button';
         buy.className = 'btn-secondary';
@@ -513,22 +580,55 @@
       $('tools-sub').textContent = next ? 'Next: ' + next.name : 'Every tool owned';
     }
 
-    // The market-day report, in the ledger's own voice.
+    // Guard contracts: one row, like Tools; the sheet stays open so more can
+    // be signed.
+    function renderGuardsSheet() {
+      $('guards-line').textContent = 'Standing ' + fmt(state.standing) + ': half your workers, plus ' +
+        state.guardStanding + ' for each contract. When you lose a market day, standing keeps part of your gold, and all of it once it matches the rival\'s competition.';
+      $('guards-standing').textContent = '+' + state.guardStanding + ' standing';
+      $('guards-price').textContent = fmt(state.guardPrice) + ' gold';
+      $('guards-own').textContent = 'Own ' + fmt(state.house.guards);
+      $('guards-buy').disabled = busy || state.house.gold < state.guardPrice;
+    }
+
+    // The market-day or market-intelligence report, in the ledger's own voice.
     function showReport(r) {
       var body = $('report-body');
+      var title = $('report-title');
       if (r.error) {
+        title.textContent = r.kind === 'intel' ? 'Market intelligence' : 'Market day';
         body.innerHTML = '<p class="text-small text-danger sans">' + esc(r.error) + '</p>';
-      } else {
+      } else if (r.kind === 'intel') {
+        title.textContent = 'Market intelligence';
+        var clerks = state.clerks || 0;
+        var note = clerks > 0
+          ? 'Reports from ' + fmt(clerks) + ' Market Clerk' + (clerks === 1 ? '' : 's') + ' are within ' + state.intelWidth + '%. Buy more in Tools for sharper reports.'
+          : 'Reports are within ' + state.intelWidth + '%. Market Clerks in Tools make them sharper.';
         body.innerHTML = '<ol class="ledger">' + entryHTML({
-          turn: state.turn, part: r.part, kind: r.won ? 'challenge_won' : 'challenge_held',
+          turn: state.turn, part: r.part, kind: r.entryKind,
           text: r.text, gold: r.gold, workers: 0, tools: 0,
-        }) + '</ol><p class="text-body mt-3">Your strength ' + fmt(r.yourStrength) +
-          ' against ' + esc(r.rivalName) + '\'s ' + fmt(r.rivalStrength) + '.</p>';
+        }) + '</ol><p class="text-body mt-3">' + esc(note) + '</p>';
+      } else {
+        title.textContent = 'Market day';
+        var line = 'Your competition ' + fmt(r.yourStrength) + ' against ' + esc(r.rivalName) +
+          '\'s ' + fmt(r.rivalStrength) + '.';
+        if (r.won && r.share > 10) {
+          line += ' A wide lead won ' + r.share + '% of their gold.';
+        } else if (!r.won && r.yourStanding >= r.rivalStrength) {
+          line += ' Your standing of ' + fmt(r.yourStanding) + ' matched their competition, so nothing was lost.';
+        } else if (!r.won && r.possible > 0) {
+          line += ' Your standing of ' + fmt(r.yourStanding) + ' kept ' + r.share + '% of the ' +
+            fmt(r.possible) + ' gold they could have won.';
+        }
+        body.innerHTML = '<ol class="ledger">' + entryHTML({
+          turn: state.turn, part: r.part, kind: r.entryKind,
+          text: r.text, gold: r.gold, workers: 0, tools: 0,
+        }) + '</ol><p class="text-body mt-3">' + line + '</p>';
       }
       openSheet('sheet-report');
     }
     function entryHTML(e) {
-      var edge = e.kind.indexOf('challenge') === 0 ? ' win' : e.kind === 'tools' ? ' buy' : '';
+      var edge = edgeClass(e.kind);
       var cls = e.gold > 0 ? ' up' : e.gold < 0 ? ' down' : '';
       return '<li class="entry' + edge + '"><div class="when">Turn ' + e.turn + ', ' + esc(e.part) +
         '</div><div>' + esc(e.text) + '</div><div class="delta sans' + cls + '">' + esc(deltaText(e)) + '</div></li>';
@@ -540,24 +640,24 @@
     function act(path, body, opts) {
       if (busy) return;
       busy = true;
-      updateChallengeBtn(); updateRecruit(); renderToolsSheet();
+      updateChallengeBtn(); updateIntelBtn(); updateRecruit(); renderToolsSheet(); renderGuardsSheet();
       api(path, body).then(function (data) {
         busy = false;
         if (opts.close) closeSheets();
         applyState(data);
-        if (data.report) showReport({ part: data.report.part, text: data.report.text, won: data.report.won, gold: data.report.gold, yourStrength: data.report.yourStrength, rivalStrength: data.report.rivalStrength, rivalName: data.report.rivalName });
+        if (data.report) showReport(data.report);
       }).catch(function (err) {
         busy = false;
         var message = err.account
           ? 'Sign in to Homeroom to continue.'
           : err.message;
-        if (path === 'challenge') {
-          showReport({ error: message });
+        if (path === 'challenge' || path === 'intel') {
+          showReport({ error: message, kind: path });
         } else if (opts.error) {
           opts.error.textContent = message;
           show(opts.error);
         }
-        updateChallengeBtn(); updateRecruit(); renderToolsSheet();
+        updateChallengeBtn(); updateIntelBtn(); updateRecruit(); renderToolsSheet(); renderGuardsSheet();
       });
     }
 
@@ -567,6 +667,15 @@
       hide($('tools-error'));
       renderToolsSheet();
       openSheet('sheet-tools');
+    });
+    document.querySelector('[data-action="intel"]').addEventListener('click', function () {
+      if (state.selected == null) return;
+      act('intel', { rivalId: state.selected }, {});
+    });
+    document.querySelector('[data-action="guards"]').addEventListener('click', function () {
+      hide($('guards-error'));
+      renderGuardsSheet();
+      openSheet('sheet-guards');
     });
     $('btn-challenge').addEventListener('click', function () {
       if (state.selected == null) return;

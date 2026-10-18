@@ -25,6 +25,16 @@
       "name": "Challenge button",
       "path": "/?demo=1",
       "expectSelector": "button.btn-primary[data-action=challenge]"
+    },
+    {
+      "name": "Market intelligence button",
+      "path": "/?demo=1",
+      "expectSelector": "button.tile[data-action=intel]"
+    },
+    {
+      "name": "Guard contracts button",
+      "path": "/?demo=1",
+      "expectSelector": "button.tile[data-action=guards]"
     }
   ]
 }
