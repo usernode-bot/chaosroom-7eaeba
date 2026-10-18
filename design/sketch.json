@@ -1,0 +1,14 @@
+{
+  "note": "The featured card this app's creator was shown while it was being made: its emoji (also the app's icon, set in dapp.json), a tagline and a few points that sum up the description in a few words. It is a picture of the idea, not a design: it shows no screen and sets no layout, words or colours. Build from the description in the first version's request; where the two differ, the description wins.",
+  "kind": "featured-card",
+  "emoji": "⚔️",
+  "tagline": "A Kings of Chaos style army game we build together",
+  "points": [
+    "Recruit soldiers and grow your army",
+    "Attack other players to steal gold",
+    "Build the game together as a group"
+  ],
+  "source": "model",
+  "model": "z-ai/glm-5.3-flash",
+  "createdAt": "2026-10-18T17:05:33.228Z"
+}
